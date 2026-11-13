@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>{% block title %}Erma Tour & Travel{% endblock %}</title>
+  <link rel="stylesheet" href="/static/css/style.css" />
+</head>
+<body>
+  <header>
+    <div class="container nav">
+      <a class="brand" href="/">Erma <span>Tour & Travel</span></a>
+      <ul class="nav-links">
+        <li><a href="/">Home</a></li>
+        <li><a href="/dashboard">Dashboard</a></li>
+        <li><a href="/tours">Tours</a></li>
+        <li><a href="/about">About Ethiopia</a></li>
+        <li><a href="/contact">Contact</a></li>
+        <li><a href="/admin/login">Admin</a></li>
+      </ul>
+    </div>
+  </header>
+
+  {% block content %}{% endblock %}
+
+  <footer>
+    <div class="container foot">
+      <div>
+        <h4>Erma Tour & Travel</h4>
+        <p>Your trusted partner for discovering the wonders of Ethiopia — from the rock-hewn churches of Lalibela to the peaks of the Simien Mountains.</p>
+      </div>
+      <div>
+        <h4>Explore</h4>
+        <p><a href="/tours">All Tours</a></p>
+        <p><a href="/about">About Ethiopia</a></p>
+        <p><a href="/contact">Plan a Trip</a></p>
+      </div>
+      <div>
+        <h4>Contact</h4>
+        <p>Addis Ababa, Ethiopia</p>
+        <p>Email: info@ermatours.et</p>
+        <p>Phone: +251 900 000 000</p>
+      </div>
+    </div>
+    <div class="container copy">&copy; 2026 Erma Tour & Travel. All rights reserved.</div>
+  </footer>
+  {% block scripts %}{% endblock %}
+</body>
+</html>

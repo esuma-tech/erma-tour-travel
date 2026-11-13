@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+{% block title %}{{ tour.title if tour else 'Tour' }} | Erma Tour & Travel{% endblock %}
+{% block content %}
+<section>
+  <div class="container">
+    {% if not tour %}
+      <p>Tour not found. <a href="/tours">Back to tours</a>.</p>
+    {% else %}
+    <div class="detail">
+      <div>
+        <img src="{{ tour.image_url or 'https://images.unsplash.com/photo-1547471080-7cc2caa01a7e?w=1200' }}" alt="{{ tour.title }}" />
+        <h2 class="section-title" style="margin-top:1rem;">{{ tour.title }}</h2>
+        <p class="meta">{{ tour.destination }} · {{ tour.duration_days }} days · From ${{ '%.0f'|format(tour.price_usd) }} / person</p>
+        <p>{{ tour.description }}</p>
+      </div>
+      <div class="panel">
+        <h3 style="margin-bottom:.5rem; color:#103b14;">Book this tour</h3>
+        <form id="booking-form">
+          <input type="hidden" name="tour_id" value="{{ tour.id }}" />
+          <label>Full name</label>
+          <input name="full_name" required />
+          <div class="row">
+            <div><label>Email</label><input type="email" name="email" required /></div>
+            <div><label>Phone</label><input name="phone" required /></div>
+          </div>
+          <div class="row">
+            <div><label>Travelers</label><input type="number" name="travelers" min="1" value="1" required /></div>
+            <div><label>Start date</label><input type="date" name="start_date" required /></div>
+          </div>
+          <label>Notes (optional)</label>
+          <textarea name="notes" placeholder="Any special requests or questions"></textarea>
+          <button class="btn" type="submit" style="margin-top:.75rem;">Request Booking</button>
+          <div id="booking-msg"></div>
+        </form>
+      </div>
+    </div>
+    {% endif %}
+  </div>
+</section>
+{% endblock %}
+{% block scripts %}
+<script>
+const form = document.getElementById('booking-form');
+if (form) {
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const msg = document.getElementById('booking-msg');
+    const fd = new FormData(form);
+    const payload = Object.fromEntries(fd.entries());
+    payload.tour_id = Number(payload.tour_id);
+    payload.travelers = Number(payload.travelers);
+    try {
+      const res = await fetch('/api/bookings', {
+        method: 'POST', headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify(payload)
+      });
+      if (!res.ok) throw new Error('Request failed');
+      msg.className = 'alert alert-success';
+      msg.textContent = 'Thank you! Your booking request has been received. We will contact you shortly.';
+      form.reset();
+    } catch (err) {
+      msg.className = 'alert alert-error';
+      msg.textContent = 'Something went wrong. Please try again or contact us directly.';
+    }
+  });
+}
+</script>
+{% endblock %}

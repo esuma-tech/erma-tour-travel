@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+{% block title %}Contact | Erma Tour & Travel{% endblock %}
+{% block content %}
+<section>
+  <div class="container detail">
+    <div>
+      <h2 class="section-title">Get in Touch</h2>
+      <p class="section-sub">Tell us about your dream trip to Ethiopia and we'll help you plan it.</p>
+      <div class="panel">
+        <p><strong>Address:</strong> Addis Ababa, Ethiopia</p>
+        <p><strong>Email:</strong> info@ermatours.et</p>
+        <p><strong>Phone:</strong> +251 900 000 000</p>
+        <p><strong>Hours:</strong> Mon–Sat, 8:30 AM – 6:00 PM (EAT)</p>
+      </div>
+    </div>
+    <div class="panel">
+      <h3 style="margin-bottom:.5rem; color:#103b14;">Send an inquiry</h3>
+      <form id="contact-form">
+        <label>Full name</label><input name="full_name" required />
+        <div class="row">
+          <div><label>Email</label><input type="email" name="email" required /></div>
+          <div><label>Phone</label><input name="phone" /></div>
+        </div>
+        <label>Subject</label><input name="subject" required />
+        <label>Message</label><textarea name="message" required></textarea>
+        <button class="btn" type="submit" style="margin-top:.75rem;">Send Message</button>
+        <div id="contact-msg"></div>
+      </form>
+    </div>
+  </div>
+</section>
+{% endblock %}
+{% block scripts %}
+<script>
+const cform = document.getElementById('contact-form');
+if (cform) {
+  cform.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const msg = document.getElementById('contact-msg');
+    const payload = Object.fromEntries(new FormData(cform).entries());
+    try {
+      const res = await fetch('/api/inquiries', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload)});
+      if (!res.ok) throw new Error();
+      msg.className = 'alert alert-success';
+      msg.textContent = 'Message sent! We will get back to you soon.';
+      cform.reset();
+    } catch {
+      msg.className = 'alert alert-error';
+      msg.textContent = 'Could not send message. Please email us directly.';
+    }
+  });
+}
+</script>
+{% endblock %}

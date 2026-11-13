@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+{% block title %}Admin Panel | Erma Tour & Travel{% endblock %}
+{% block content %}
+<section>
+  <div class="container">
+    <div style="display:flex;justify-content:space-between;align-items:center;gap:1rem;flex-wrap:wrap;">
+      <div>
+        <h2 class="section-title">Admin Panel</h2>
+        <p class="section-sub">Signed in as <strong>{{ user }}</strong></p>
+      </div>
+      <a class="btn" href="/admin/logout">Logout</a>
+    </div>
+
+    <div class="features" style="margin-bottom:2rem;">
+      <div class="feature"><h4>{{ tours|length }}</h4><p>Tours</p></div>
+      <div class="feature"><h4>{{ bookings|length }}</h4><p>Booking requests</p></div>
+      <div class="feature"><h4>{{ inquiries|length }}</h4><p>Inquiries</p></div>
+    </div>
+
+    <h3 class="section-title" style="font-size:1.3rem;">Recent Bookings</h3>
+    <div class="panel" style="overflow:auto; margin-bottom:1.5rem;">
+      <table style="width:100%; border-collapse:collapse;">
+        <tr><th align="left">Name</th><th align="left">Email</th><th align="left">Tour ID</th><th align="left">Travelers</th><th align="left">Start</th><th align="left">Status</th></tr>
+        {% for b in bookings %}
+        <tr><td style="padding:.4rem;border-top:1px solid #eee;">{{ b.full_name }}</td><td style="padding:.4rem;border-top:1px solid #eee;">{{ b.email }}</td><td style="padding:.4rem;border-top:1px solid #eee;">{{ b.tour_id }}</td><td style="padding:.4rem;border-top:1px solid #eee;">{{ b.travelers }}</td><td style="padding:.4rem;border-top:1px solid #eee;">{{ b.start_date }}</td><td style="padding:.4rem;border-top:1px solid #eee;">{{ b.status }}</td></tr>
+        {% else %}
+        <tr><td colspan="6" style="padding:.5rem;">No bookings yet.</td></tr>
+        {% endfor %}
+      </table>
+    </div>
+
+    <h3 class="section-title" style="font-size:1.3rem;">Recent Inquiries</h3>
+    <div class="panel" style="overflow:auto;">
+      <table style="width:100%; border-collapse:collapse;">
+        <tr><th align="left">Name</th><th align="left">Email</th><th align="left">Subject</th><th align="left">Message</th></tr>
+        {% for i in inquiries %}
+        <tr><td style="padding:.4rem;border-top:1px solid #eee;">{{ i.full_name }}</td><td style="padding:.4rem;border-top:1px solid #eee;">{{ i.email }}</td><td style="padding:.4rem;border-top:1px solid #eee;">{{ i.subject }}</td><td style="padding:.4rem;border-top:1px solid #eee;">{{ i.message[:120] }}{% if i.message|length > 120 %}...{% endif %}</td></tr>
+        {% else %}
+        <tr><td colspan="4" style="padding:.5rem;">No inquiries yet.</td></tr>
+        {% endfor %}
+      </table>
+    </div>
+  </div>
+</section>
+{% endblock %}

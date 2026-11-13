@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+{% block title %}Dashboard | Erma Tour & Travel{% endblock %}
+{% block content %}
+<section>
+  <div class="container">
+    <h2 class="section-title">Explore Our Gallery</h2>
+    <p class="section-sub">A public dashboard showcasing our tours, experiences, photos, and videos across Ethiopia. No login required.</p>
+
+    <div class="features" style="margin-bottom:2rem;">
+      <div class="feature"><h4>{{ tours|length }}</h4><p>Tour packages</p></div>
+      <div class="feature"><h4>{{ images|length }}</h4><p>Photos</p></div>
+      <div class="feature"><h4>{{ videos|length }}</h4><p>Videos</p></div>
+      <div class="feature"><h4>Ethiopia</h4><p>Destinations & experiences</p></div>
+    </div>
+
+    <h3 class="section-title" style="font-size:1.4rem;">Videos</h3>
+    <div class="grid" style="margin-bottom:2rem;">
+      {% for v in videos %}
+      <div class="card">
+        <video controls preload="metadata" style="width:100%;height:220px;background:#000;" src="/static/media/{{ v | urlencode }}"></video>
+        <div class="card-body"><div class="meta">{{ v }}</div></div>
+      </div>
+      {% else %}
+      <p>No videos available.</p>
+      {% endfor %}
+    </div>
+
+    <h3 class="section-title" style="font-size:1.4rem;">Photo Gallery</h3>
+    <div class="grid">
+      {% for img in images %}
+      <div class="card">
+        <a href="/static/media/{{ img | urlencode }}" target="_blank">
+          <img loading="lazy" src="/static/media/{{ img | urlencode }}" alt="Erma Tour photo {{ loop.index }}" style="height:220px;" />
+        </a>
+      </div>
+      {% else %}
+      <p>No photos available.</p>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+{% endblock %}
