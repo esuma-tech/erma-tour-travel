@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block title %}{{ tour.title if tour else 'Tour' }} | Erma Tour & Travel{% endblock %}
+{% block title %}{{ tour.title if tour else 'Tour' }} | Historical Ethiopia Tours{% endblock %}
 {% block content %}
 <section>
   <div class="container">
@@ -14,7 +14,7 @@
         <p>{{ tour.description }}</p>
       </div>
       <div class="panel">
-        <h3 style="margin-bottom:.5rem; color:#103b14;">Book this tour</h3>
+        <h3 style="margin-bottom:.5rem; color:#134e4a;">Book this tour</h3>
         <form id="booking-form">
           <input type="hidden" name="tour_id" value="{{ tour.id }}" />
           <label>Full name</label>

@@ -2,7 +2,7 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
-    app_name: str = "Erma Tour & Travel"
+    app_name: str = "Historical Ethiopia Tours"
     database_url: str = "postgresql+psycopg://postgres:password@localhost:5432/erma_tours"
     secret_key: str = "change-me"
     debug: bool = True

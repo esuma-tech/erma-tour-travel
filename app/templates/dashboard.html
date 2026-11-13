@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block title %}Dashboard | Erma Tour & Travel{% endblock %}
+{% block title %}Dashboard | Historical Ethiopia Tours{% endblock %}
 {% block content %}
 <section>
   <div class="container">
@@ -30,7 +30,7 @@
       {% for img in images %}
       <div class="card">
         <a href="/static/media/{{ img | urlencode }}" target="_blank">
-          <img loading="lazy" src="/static/media/{{ img | urlencode }}" alt="Erma Tour photo {{ loop.index }}" style="height:220px;" />
+          <img loading="lazy" src="/static/media/{{ img | urlencode }}" alt="Historical Ethiopia Tours photo {{ loop.index }}" style="height:220px;" />
         </a>
       </div>
       {% else %}

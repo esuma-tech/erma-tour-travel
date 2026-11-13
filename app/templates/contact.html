@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block title %}Contact | Erma Tour & Travel{% endblock %}
+{% block title %}Contact | Historical Ethiopia Tours{% endblock %}
 {% block content %}
 <section>
   <div class="container detail">
@@ -7,14 +7,20 @@
       <h2 class="section-title">Get in Touch</h2>
       <p class="section-sub">Tell us about your dream trip to Ethiopia and we'll help you plan it.</p>
       <div class="panel">
+        <p><strong>Agency:</strong> Historical Ethiopia Tours</p>
+        <p><strong>Owner:</strong> Ermiyas Dereje</p>
+        <p><strong>Developer:</strong> Esayas Belay</p>
         <p><strong>Address:</strong> Addis Ababa, Ethiopia</p>
-        <p><strong>Email:</strong> info@ermatours.et</p>
-        <p><strong>Phone:</strong> +251 900 000 000</p>
         <p><strong>Hours:</strong> Mon–Sat, 8:30 AM – 6:00 PM (EAT)</p>
+        <div class="contact-box">
+          <h4 style="margin-bottom:.4rem; color:#134e4a;">Direct Contact</h4>
+          <p><strong>Email:</strong> <a href="mailto:esuman82@gmail.com">esuman82@gmail.com</a></p>
+          <p><strong>Phone:</strong> <a href="tel:+251912755686">0912755686</a></p>
+        </div>
       </div>
     </div>
     <div class="panel">
-      <h3 style="margin-bottom:.5rem; color:#103b14;">Send an inquiry</h3>
+      <h3 style="margin-bottom:.5rem; color:#134e4a;">Send an inquiry</h3>
       <form id="contact-form">
         <label>Full name</label><input name="full_name" required />
         <div class="row">
@@ -46,7 +52,7 @@ if (cform) {
       cform.reset();
     } catch {
       msg.className = 'alert alert-error';
-      msg.textContent = 'Could not send message. Please email us directly.';
+      msg.textContent = 'Could not send message. Please contact us directly at esuman82@gmail.com or 0912755686.';
     }
   });
 }
