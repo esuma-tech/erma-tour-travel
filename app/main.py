@@ -16,6 +16,11 @@ async def lifespan(app: FastAPI):
             conn.exec_driver_sql("ALTER TABLE bookings ADD COLUMN IF NOT EXISTS user_id INTEGER REFERENCES users(id)")
         except Exception:
             pass
+        try:
+            conn.exec_driver_sql("ALTER TABLE users ADD COLUMN IF NOT EXISTS is_approved BOOLEAN DEFAULT TRUE")
+            conn.exec_driver_sql("ALTER TABLE users ALTER COLUMN is_approved SET DEFAULT FALSE")
+        except Exception:
+            pass
     seed_if_empty()
     yield
 

@@ -7,6 +7,7 @@
       <h2 class="section-title" style="font-size:1.7rem;">Create an Account</h2>
       <p class="section-sub">Sign up to book tours with Historical Ethiopia Tours.</p>
       {% if error %}<div class="alert alert-error">{{ error }}</div>{% endif %}
+      {% if success == 'pending' %}<div class="alert alert-success">Signup submitted successfully. Please wait for admin approval before you can log in and book.</div>{% endif %}
       <form method="post" action="/signup">
         <label>Full name</label>
         <input name="full_name" required />
@@ -16,7 +17,9 @@
         </div>
         <label>Password</label>
         <input type="password" name="password" minlength="6" required />
-        <button class="btn" type="submit" style="margin-top:1rem;">Sign Up & Continue to Booking</button>
+        <label>Confirm password</label>
+        <input type="password" name="confirm_password" minlength="6" required />
+        <button class="btn" type="submit" style="margin-top:1rem;">Sign Up</button>
       </form>
       <p style="margin-top:1rem;">Already have an account? <a href="/login">Log in</a></p>
     </div>

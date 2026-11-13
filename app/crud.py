@@ -1,5 +1,5 @@
 from sqlalchemy.orm import Session
-from sqlalchemy import select
+from sqlalchemy import select, func
 
 from . import models, schemas
 
@@ -94,17 +94,32 @@ def get_user(db: Session, user_id: int):
     return db.get(models.User, user_id)
 
 
-def create_user(db: Session, full_name: str, email: str, phone: str | None, password_hash: str):
+def create_user(db: Session, full_name: str, email: str, phone: str | None, password_hash: str, is_approved: bool = False):
     user = models.User(
         full_name=full_name.strip(),
         email=email.lower().strip(),
         phone=(phone or "").strip() or None,
         password_hash=password_hash,
+        is_approved=is_approved,
     )
     db.add(user)
     db.commit()
     db.refresh(user)
     return user
+
+
+def set_user_approval(db: Session, user_id: int, approved: bool):
+    user = db.get(models.User, user_id)
+    if not user:
+        return None
+    user.is_approved = approved
+    db.commit()
+    db.refresh(user)
+    return user
+
+
+def count_pending_users(db: Session):
+    return db.scalar(select(func.count()).select_from(models.User).where(models.User.is_approved.is_(False))) or 0
 
 
 def list_dashboard_posts(db: Session, published_only: bool = False):

@@ -37,7 +37,10 @@ def current_user(request: Request, db: Session):
     uid = read_user_session_token(token) if token else None
     if not uid:
         return None
-    return crud.get_user(db, uid)
+    user = crud.get_user(db, uid)
+    if user and not getattr(user, "is_approved", False):
+        return None
+    return user
 
 
 @router.get("/", response_class=HTMLResponse)
@@ -83,31 +86,38 @@ def dashboard(request: Request, db: Session = Depends(get_db)):
 def signup_page(request: Request, db: Session = Depends(get_db)):
     if current_user(request, db):
         return RedirectResponse("/book", status_code=303)
-    return templates.TemplateResponse(request, "signup.html", {"error": None})
+    return templates.TemplateResponse(request, "signup.html", {"error": None, "success": request.query_params.get("success")})
 
 
 @router.post("/signup", response_class=HTMLResponse)
-def signup(request: Request, full_name: str = Form(...), email: str = Form(...), phone: str = Form(""), password: str = Form(...), db: Session = Depends(get_db)):
+def signup(request: Request, full_name: str = Form(...), email: str = Form(...), phone: str = Form(""), password: str = Form(...), confirm_password: str = Form(...), db: Session = Depends(get_db)):
+    if password != confirm_password:
+        return templates.TemplateResponse(request, "signup.html", {"error": "Passwords do not match.", "success": None}, status_code=400)
+    if len(password) < 6:
+        return templates.TemplateResponse(request, "signup.html", {"error": "Password must be at least 6 characters.", "success": None}, status_code=400)
     if crud.get_user_by_email(db, email):
-        return templates.TemplateResponse(request, "signup.html", {"error": "An account with this email already exists."}, status_code=400)
-    user = crud.create_user(db, full_name, email, phone, hash_password(password))
-    resp = RedirectResponse("/book?welcome=1", status_code=303)
-    resp.set_cookie("user_session", create_user_session_token(user.id), httponly=True, samesite="lax")
-    return resp
+        return templates.TemplateResponse(request, "signup.html", {"error": "An account with this email already exists.", "success": None}, status_code=400)
+    crud.create_user(db, full_name, email, phone, hash_password(password), is_approved=False)
+    crud.set_setting(db, "admin_notice", f"New signup pending approval: {full_name} ({email.lower().strip()})")
+    return RedirectResponse("/signup?success=pending", status_code=303)
 
 
 @router.get("/login", response_class=HTMLResponse)
 def login_page(request: Request, db: Session = Depends(get_db)):
     if current_user(request, db):
         return RedirectResponse("/book", status_code=303)
-    return templates.TemplateResponse(request, "login.html", {"error": None})
+    msg = request.query_params.get("msg")
+    info = "Your account is pending admin approval. Please wait." if msg == "pending" else None
+    return templates.TemplateResponse(request, "login.html", {"error": None, "info": info})
 
 
 @router.post("/login", response_class=HTMLResponse)
 def login(request: Request, email: str = Form(...), password: str = Form(...), db: Session = Depends(get_db)):
     user = crud.get_user_by_email(db, email)
     if not user or not verify_password(password, user.password_hash):
-        return templates.TemplateResponse(request, "login.html", {"error": "Invalid email or password."}, status_code=401)
+        return templates.TemplateResponse(request, "login.html", {"error": "Invalid email or password.", "info": None}, status_code=401)
+    if not getattr(user, "is_approved", False):
+        return templates.TemplateResponse(request, "login.html", {"error": None, "info": "Your account is pending admin approval. Please wait until an admin approves your account."}, status_code=403)
     resp = RedirectResponse("/book", status_code=303)
     resp.set_cookie("user_session", create_user_session_token(user.id), httponly=True, samesite="lax")
     return resp
@@ -191,6 +201,8 @@ def admin_panel(request: Request, section: str = "overview", edit_tour: int | No
     posts = crud.list_dashboard_posts(db)
     selected_tour = crud.get_tour(db, edit_tour) if edit_tour else None
     selected_post = crud.get_dashboard_post(db, edit_post) if edit_post else None
+    pending_users = crud.count_pending_users(db)
+    admin_notice = crud.get_setting(db, "admin_notice", "")
     return templates.TemplateResponse(request, "admin.html", {
         "user": user,
         "section": section,
@@ -207,6 +219,8 @@ def admin_panel(request: Request, section: str = "overview", edit_tour: int | No
         "edit_tour_id": edit_tour,
         "edit_post": selected_post,
         "edit_post_id": edit_post,
+        "pending_users": pending_users,
+        "admin_notice": admin_notice,
     })
 
 
@@ -326,7 +340,25 @@ def admin_delete_user(request: Request, user_id: int, db: Session = Depends(get_
     if not require_admin(request):
         return RedirectResponse("/admin/login", status_code=303)
     crud.delete_user(db, user_id)
-    return RedirectResponse("/admin?section=users&notice=user_deleted", status_code=303)
+    return RedirectResponse("/admin?section=users&notice=user_declined_deleted", status_code=303)
+
+
+@router.post("/admin/users/{user_id}/approve")
+def admin_approve_user(request: Request, user_id: int, db: Session = Depends(get_db)):
+    if not require_admin(request):
+        return RedirectResponse("/admin/login", status_code=303)
+    crud.set_user_approval(db, user_id, True)
+    crud.set_setting(db, "admin_notice", "")
+    return RedirectResponse("/admin?section=users&notice=user_approved", status_code=303)
+
+
+@router.post("/admin/users/{user_id}/decline")
+def admin_decline_user(request: Request, user_id: int, db: Session = Depends(get_db)):
+    if not require_admin(request):
+        return RedirectResponse("/admin/login", status_code=303)
+    crud.delete_user(db, user_id)
+    crud.set_setting(db, "admin_notice", "")
+    return RedirectResponse("/admin?section=users&notice=user_declined", status_code=303)
 
 
 @router.post("/admin/password")

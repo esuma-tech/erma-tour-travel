@@ -12,6 +12,7 @@
     </div>
 
     {% if notice %}<div class="alert alert-success">Action: {{ notice.replace('_',' ') }}.</div>{% endif %}
+    {% if admin_notice %}<div class="alert alert-error"><strong>Admin notification:</strong> {{ admin_notice }}</div>{% endif %}
 
     <div class="panel" style="margin:1rem 0 1.5rem;">
       <div style="display:flex;flex-wrap:wrap;gap:.5rem;">
@@ -178,21 +179,31 @@
     </div>
 
     {% elif section == 'users' %}
-    <h3 class="section-title" style="font-size:1.3rem;">Registered Users</h3>
+    <h3 class="section-title" style="font-size:1.3rem;">Registered Users ({{ pending_users }} pending approval)</h3>
     <div class="panel" style="overflow:auto;">
       <table style="width:100%; border-collapse:collapse;">
-        <tr><th align="left">ID</th><th align="left">Name</th><th align="left">Email</th><th align="left">Phone</th><th align="left">Joined</th><th></th></tr>
+        <tr><th align="left">ID</th><th align="left">Name</th><th align="left">Email</th><th align="left">Phone</th><th align="left">Status</th><th align="left">Joined</th><th align="left">Actions</th></tr>
         {% for u in users %}
         <tr>
           <td style="padding:.4rem;border-top:1px solid #eee;">{{ u.id }}</td>
           <td style="padding:.4rem;border-top:1px solid #eee;">{{ u.full_name }}</td>
           <td style="padding:.4rem;border-top:1px solid #eee;">{{ u.email }}</td>
           <td style="padding:.4rem;border-top:1px solid #eee;">{{ u.phone or '' }}</td>
+          <td style="padding:.4rem;border-top:1px solid #eee;">{% if u.is_approved %}<span style="color:#065f46;font-weight:700;">Approved</span>{% else %}<span style="color:#991b1b;font-weight:700;">Pending</span>{% endif %}</td>
           <td style="padding:.4rem;border-top:1px solid #eee;">{{ u.created_at.strftime('%Y-%m-%d') if u.created_at else '' }}</td>
-          <td style="padding:.4rem;border-top:1px solid #eee;"><form method="post" action="/admin/users/{{ u.id }}/delete" onsubmit="return confirm('Delete this user?');"><input type="hidden" name="section" value="users"><button class="btn" type="submit" style="background:#fee2e2;color:#991b1b;box-shadow:none;padding:.25rem .6rem;">Delete</button></form></td>
+          <td style="padding:.4rem;border-top:1px solid #eee;">
+            <div style="display:flex;gap:.3rem;flex-wrap:wrap;">
+              {% if not u.is_approved %}
+              <form method="post" action="/admin/users/{{ u.id }}/approve"><button class="btn" type="submit" style="padding:.25rem .6rem;">Approve</button></form>
+              <form method="post" action="/admin/users/{{ u.id }}/decline" onsubmit="return confirm('Decline and remove this signup?');"><button class="btn" type="submit" style="background:#fee2e2;color:#991b1b;box-shadow:none;padding:.25rem .6rem;">Decline</button></form>
+              {% endif %}
+              <form method="post" action="/admin/users/{{ u.id }}/delete" onsubmit="return confirm('Delete this user?');"><input type="hidden" name="section" value="users"><button class="btn" type="submit" style="background:#f3f4f6;color:#374151;box-shadow:none;padding:.25rem .6rem;">Delete</button></form>
+            </div>
+          </td>
         </tr>
-        {% else %}<tr><td colspan="6" style="padding:.5rem;">No users yet.</td></tr>{% endfor %}
+        {% else %}<tr><td colspan="7" style="padding:.5rem;">No users yet.</td></tr>{% endfor %}
       </table>
+      <p style="margin-top:.75rem; color:#5b6472;">Passwords are securely hashed and cannot be displayed. Users set their password on the signup page (with confirmation) and can log in after admin approval.</p>
     </div>
 
     {% elif section == 'password' %}
