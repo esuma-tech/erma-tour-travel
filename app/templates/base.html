@@ -17,6 +17,12 @@
         <li><a href="/book">Book</a></li>
         <li><a href="/about">About</a></li>
         <li><a href="/contact">Contact</a></li>
+        {% if request.cookies.get('user_session') %}
+        <li><a href="/logout">Logout</a></li>
+        {% else %}
+        <li><a href="/login">Login</a></li>
+        <li><a href="/signup">Sign Up</a></li>
+        {% endif %}
         <li><a href="/admin/login">Admin</a></li>
       </ul>
     </div>
