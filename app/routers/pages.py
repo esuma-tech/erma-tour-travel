@@ -31,43 +31,43 @@ def home(request: Request, db: Session = Depends(get_db)):
     featured = crud.list_tours(db, featured_only=True)
     tours = crud.list_tours(db)
     images, videos = list_media()
-    return templates.TemplateResponse("index.html", {"request": request, "featured": featured, "tours": tours, "preview_images": images[:6]})
+    return templates.TemplateResponse(request, "index.html", {"featured": featured, "tours": tours, "preview_images": images[:6]})
 
 @router.get("/tours", response_class=HTMLResponse)
 def tours_page(request: Request, db: Session = Depends(get_db)):
     tours = crud.list_tours(db)
-    return templates.TemplateResponse("tours.html", {"request": request, "tours": tours})
+    return templates.TemplateResponse(request, "tours.html", {"tours": tours})
 
 @router.get("/tours/{tour_id}", response_class=HTMLResponse)
 def tour_detail(request: Request, tour_id: int, db: Session = Depends(get_db)):
     tour = crud.get_tour(db, tour_id)
-    return templates.TemplateResponse("tour_detail.html", {"request": request, "tour": tour})
+    return templates.TemplateResponse(request, "tour_detail.html", {"tour": tour})
 
 @router.get("/about", response_class=HTMLResponse)
 def about(request: Request):
-    return templates.TemplateResponse("about.html", {"request": request})
+    return templates.TemplateResponse(request, "about.html")
 
 @router.get("/contact", response_class=HTMLResponse)
 def contact(request: Request):
-    return templates.TemplateResponse("contact.html", {"request": request})
+    return templates.TemplateResponse(request, "contact.html")
 
 @router.get("/dashboard", response_class=HTMLResponse)
 def dashboard(request: Request, db: Session = Depends(get_db)):
     images, videos = list_media()
     tours = crud.list_tours(db)
-    return templates.TemplateResponse("dashboard.html", {"request": request, "images": images, "videos": videos, "tours": tours})
+    return templates.TemplateResponse(request, "dashboard.html", {"images": images, "videos": videos, "tours": tours})
 
 @router.get("/admin/login", response_class=HTMLResponse)
 def admin_login_page(request: Request):
     if current_admin(request):
         return RedirectResponse("/admin", status_code=303)
-    return templates.TemplateResponse("admin_login.html", {"request": request, "error": None})
+    return templates.TemplateResponse(request, "admin_login.html", {"error": None})
 
 @router.post("/admin/login", response_class=HTMLResponse)
 def admin_login(request: Request, username: str = Form(...), password: str = Form(...), db: Session = Depends(get_db)):
     admin = crud.get_admin_by_username(db, username)
     if not admin or not verify_password(password, admin.password_hash):
-        return templates.TemplateResponse("admin_login.html", {"request": request, "error": "Invalid username or password"}, status_code=401)
+        return templates.TemplateResponse(request, "admin_login.html", {"error": "Invalid username or password"}, status_code=401)
     resp = RedirectResponse("/admin", status_code=303)
     resp.set_cookie("admin_session", create_session_token(admin.username), httponly=True, samesite="lax")
     return resp
@@ -83,8 +83,8 @@ def admin_panel(request: Request, db: Session = Depends(get_db)):
     user = current_admin(request)
     if not user:
         return RedirectResponse("/admin/login", status_code=303)
-    return templates.TemplateResponse("admin.html", {
-        "request": request, "user": user,
+    return templates.TemplateResponse(request, "admin.html", {
+        "user": user,
         "tours": crud.list_tours(db),
         "bookings": crud.list_bookings(db),
         "inquiries": crud.list_inquiries(db),
