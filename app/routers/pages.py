@@ -1,6 +1,7 @@
 ﻿from pathlib import Path
 from datetime import date
-from fastapi import APIRouter, Depends, Request, Form
+import shutil
+from fastapi import APIRouter, Depends, Request, Form, UploadFile, File
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session
@@ -193,6 +194,8 @@ def admin_panel(request: Request, db: Session = Depends(get_db)):
         "inquiries": crud.list_inquiries(db),
         "posts": crud.list_dashboard_posts(db),
         "media_files": media_files,
+        "images": images,
+        "videos": videos,
         "notice": request.query_params.get("notice"),
     })
 
@@ -243,3 +246,42 @@ def admin_delete_post(request: Request, post_id: int, db: Session = Depends(get_
         return RedirectResponse("/admin/login", status_code=303)
     crud.delete_dashboard_post(db, post_id)
     return RedirectResponse("/admin?notice=post_deleted", status_code=303)
+
+
+@router.post("/admin/media/upload")
+async def admin_upload_media(request: Request, files: list[UploadFile] = File(...)):
+    if not require_admin(request):
+        return RedirectResponse("/admin/login", status_code=303)
+    MEDIA_DIR.mkdir(parents=True, exist_ok=True)
+    allowed = {".jpg", ".jpeg", ".png", ".webp", ".gif", ".mp4", ".webm", ".mov"}
+    saved = 0
+    for f in files:
+        if not f.filename:
+            continue
+        name = Path(f.filename).name
+        suffix = Path(name).suffix.lower()
+        if suffix not in allowed:
+            continue
+        dest = MEDIA_DIR / name
+        if dest.exists():
+            stem, suf = dest.stem, dest.suffix
+            i = 1
+            while dest.exists():
+                dest = MEDIA_DIR / f"{stem}_{i}{suf}"
+                i += 1
+        with dest.open("wb") as out:
+            shutil.copyfileobj(f.file, out)
+        saved += 1
+    return RedirectResponse(f"/admin?notice=uploaded_{saved}", status_code=303)
+
+
+@router.post("/admin/media/delete")
+def admin_delete_media(request: Request, filename: str = Form(...)):
+    if not require_admin(request):
+        return RedirectResponse("/admin/login", status_code=303)
+    name = Path(filename).name
+    target = (MEDIA_DIR / name).resolve()
+    if MEDIA_DIR.resolve() in target.parents or target.parent == MEDIA_DIR.resolve():
+        if target.exists() and target.is_file():
+            target.unlink()
+    return RedirectResponse("/admin?notice=media_deleted", status_code=303)
