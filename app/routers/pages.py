@@ -181,15 +181,17 @@ def require_admin(request: Request):
 
 
 @router.get("/admin", response_class=HTMLResponse)
-def admin_panel(request: Request, db: Session = Depends(get_db)):
+def admin_panel(request: Request, edit_tour: int | None = None, db: Session = Depends(get_db)):
     user = require_admin(request)
     if not user:
         return RedirectResponse("/admin/login", status_code=303)
     images, videos = list_media()
     media_files = ["/static/media/" + f for f in images + videos]
+    tours = crud.list_tours(db)
+    selected_tour = crud.get_tour(db, edit_tour) if edit_tour else None
     return templates.TemplateResponse(request, "admin.html", {
         "user": user,
-        "tours": crud.list_tours(db),
+        "tours": tours,
         "bookings": crud.list_bookings(db),
         "inquiries": crud.list_inquiries(db),
         "posts": crud.list_dashboard_posts(db),
@@ -197,6 +199,8 @@ def admin_panel(request: Request, db: Session = Depends(get_db)):
         "images": images,
         "videos": videos,
         "notice": request.query_params.get("notice"),
+        "edit_tour": selected_tour,
+        "edit_tour_id": edit_tour,
     })
 
 
