@@ -3,7 +3,8 @@ from itsdangerous import URLSafeSerializer, BadSignature
 
 from .config import settings
 
-serializer = URLSafeSerializer(settings.secret_key, salt="erma-admin-session")
+admin_serializer = URLSafeSerializer(settings.secret_key, salt="erma-admin-session")
+user_serializer = URLSafeSerializer(settings.secret_key, salt="erma-user-session")
 
 
 def hash_password(password: str) -> str:
@@ -18,12 +19,24 @@ def verify_password(password: str, password_hash: str) -> bool:
 
 
 def create_session_token(username: str) -> str:
-    return serializer.dumps({"u": username})
+    return admin_serializer.dumps({"u": username})
 
 
 def read_session_token(token: str) -> str | None:
     try:
-        data = serializer.loads(token)
+        data = admin_serializer.loads(token)
         return data.get("u")
+    except BadSignature:
+        return None
+
+
+def create_user_session_token(user_id: int) -> str:
+    return user_serializer.dumps({"uid": user_id})
+
+
+def read_user_session_token(token: str) -> int | None:
+    try:
+        data = user_serializer.loads(token)
+        return data.get("uid")
     except BadSignature:
         return None

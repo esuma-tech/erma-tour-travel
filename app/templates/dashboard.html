@@ -3,15 +3,35 @@
 {% block content %}
 <section>
   <div class="container">
-    <h2 class="section-title">Explore Our Gallery</h2>
-    <p class="section-sub">A public dashboard showcasing our tours, experiences, photos, and videos across Ethiopia. No login required.</p>
+    <h2 class="section-title">Explore Our Gallery & Updates</h2>
+    <p class="section-sub">A public dashboard showcasing our tours, posted updates, photos, and videos across Ethiopia. No login required.</p>
 
     <div class="features" style="margin-bottom:2rem;">
       <div class="feature"><h4>{{ tours|length }}</h4><p>Tour packages</p></div>
+      <div class="feature"><h4>{{ posts|length }}</h4><p>Posted updates</p></div>
       <div class="feature"><h4>{{ images|length }}</h4><p>Photos</p></div>
       <div class="feature"><h4>{{ videos|length }}</h4><p>Videos</p></div>
-      <div class="feature"><h4>Ethiopia</h4><p>Destinations & experiences</p></div>
     </div>
+
+    {% if posts %}
+    <h3 class="section-title" style="font-size:1.4rem;">Latest Posts</h3>
+    <div class="grid" style="margin-bottom:2rem;">
+      {% for p in posts %}
+      <div class="card">
+        {% if p.media_type == 'video' and p.media_url %}
+          <video controls preload="metadata" style="width:100%;height:220px;background:#000;" src="{{ p.media_url }}"></video>
+        {% elif p.media_url %}
+          <img src="{{ p.media_url }}" alt="{{ p.title }}" style="height:220px;" />
+        {% endif %}
+        <div class="card-body">
+          <h3>{{ p.title }}</h3>
+          {% if p.body %}<p>{{ p.body }}</p>{% endif %}
+          <div class="meta">{{ p.created_at.strftime('%Y-%m-%d') if p.created_at else '' }}</div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+    {% endif %}
 
     <h3 class="section-title" style="font-size:1.4rem;">Videos</h3>
     <div class="grid" style="margin-bottom:2rem;">

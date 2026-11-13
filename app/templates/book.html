@@ -1,0 +1,83 @@
+{% extends "base.html" %}
+{% block title %}Book a Tour | Historical Ethiopia Tours{% endblock %}
+{% block content %}
+<section>
+  <div class="container detail">
+    <div>
+      <h2 class="section-title">Book Your Tour</h2>
+      <p class="section-sub">Choose a tour package and submit your booking request. New users can sign up below to get started.</p>
+
+      {% if welcome %}<div class="alert alert-success">Account created successfully. You can now complete your booking.</div>{% endif %}
+      {% if success %}<div class="alert alert-success">Booking request submitted! We will contact you soon to confirm details.</div>{% endif %}
+      {% if error %}<div class="alert alert-error">{{ error }}</div>{% endif %}
+
+      {% if not user %}
+      <div class="panel" style="margin-bottom:1rem;">
+        <h3 style="color:#134e4a;">Sign up or log in to book</h3>
+        <p>To place a booking, please create an account or log in.</p>
+        <p style="margin-top:.75rem; display:flex; gap:.5rem; flex-wrap:wrap;">
+          <a class="btn" href="/signup">Sign Up</a>
+          <a class="btn btn-outline" href="/login" style="border-color:#0f766e;color:#0f766e;">Log In</a>
+        </p>
+      </div>
+      {% else %}
+      <div class="panel">
+        <p><strong>Logged in as:</strong> {{ user.full_name }} ({{ user.email }}) · <a href="/logout">Log out</a></p>
+        <form method="post" action="/book" style="margin-top:.5rem;">
+          <label>Select tour</label>
+          <select name="tour_id" required>
+            <option value="">-- Choose a tour --</option>
+            {% for t in tours %}
+            <option value="{{ t.id }}" {% if selected_tour_id == t.id %}selected{% endif %}>{{ t.title }} — {{ t.destination }} ({{ t.duration_days }} days, ${{ '%.0f'|format(t.price_usd) }})</option>
+            {% endfor %}
+          </select>
+          <label>Full name</label>
+          <input name="full_name" value="{{ user.full_name }}" required />
+          <div class="row">
+            <div><label>Email</label><input type="email" name="email" value="{{ user.email }}" required /></div>
+            <div><label>Phone</label><input name="phone" value="{{ user.phone or '' }}" required /></div>
+          </div>
+          <div class="row">
+            <div><label>Travelers</label><input type="number" name="travelers" min="1" value="1" required /></div>
+            <div><label>Start date</label><input type="date" name="start_date" min="{{ today }}" required /></div>
+          </div>
+          <label>Notes (optional)</label>
+          <textarea name="notes" placeholder="Special requests, questions, or preferences"></textarea>
+          <button class="btn" type="submit" style="margin-top:.75rem;">Submit Booking Request</button>
+        </form>
+      </div>
+      {% endif %}
+
+      {% if user and my_bookings %}
+      <div class="panel" style="margin-top:1rem;">
+        <h3 style="color:#134e4a; margin-bottom:.5rem;">My Booking Requests</h3>
+        <ul style="padding-left:1.2rem;">
+          {% for b in my_bookings %}
+          <li><strong>Tour #{{ b.tour_id }}</strong> — {{ b.travelers }} traveler(s), start {{ b.start_date }} ({{ b.status }})</li>
+          {% endfor %}
+        </ul>
+      </div>
+      {% endif %}
+    </div>
+
+    <div>
+      <h3 class="section-title" style="font-size:1.4rem;">Available Tours & Prices</h3>
+      <div class="grid" style="grid-template-columns:1fr;">
+        {% for t in tours %}
+        <div class="card">
+          <div class="card-body">
+            <h3>{{ t.title }}</h3>
+            <div class="meta">{{ t.destination }} · {{ t.duration_days }} days</div>
+            <p>{{ t.description[:140] }}{% if t.description|length > 140 %}...{% endif %}</p>
+            <div class="price">${{ '%.0f'|format(t.price_usd) }} per person</div>
+            <p style="margin-top:.5rem;"><a class="btn" href="/book?tour_id={{ t.id }}">Book this tour</a></p>
+          </div>
+        </div>
+        {% else %}
+        <p>No tours available right now.</p>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+</section>
+{% endblock %}

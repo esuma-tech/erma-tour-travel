@@ -11,6 +11,11 @@ from .seed import seed_if_empty
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     Base.metadata.create_all(bind=engine)
+    with engine.begin() as conn:
+        try:
+            conn.exec_driver_sql("ALTER TABLE bookings ADD COLUMN IF NOT EXISTS user_id INTEGER REFERENCES users(id)")
+        except Exception:
+            pass
     seed_if_empty()
     yield
 

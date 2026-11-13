@@ -6,26 +6,88 @@
     <div style="display:flex;justify-content:space-between;align-items:center;gap:1rem;flex-wrap:wrap;">
       <div>
         <h2 class="section-title">Admin Panel</h2>
-        <p class="section-sub">Signed in as <strong>{{ user }}</strong></p>
+        <p class="section-sub">Signed in as <strong>{{ user }}</strong> — manage tours, prices, dashboard posts, bookings, and inquiries.</p>
       </div>
       <a class="btn" href="/admin/logout">Logout</a>
     </div>
 
-    <div class="features" style="margin-bottom:2rem;">
+    {% if notice %}<div class="alert alert-success">Action completed: {{ notice.replace('_',' ') }}.</div>{% endif %}
+
+    <div class="features" style="margin:1.2rem 0 2rem;">
       <div class="feature"><h4>{{ tours|length }}</h4><p>Tours</p></div>
+      <div class="feature"><h4>{{ posts|length }}</h4><p>Dashboard posts</p></div>
       <div class="feature"><h4>{{ bookings|length }}</h4><p>Booking requests</p></div>
       <div class="feature"><h4>{{ inquiries|length }}</h4><p>Inquiries</p></div>
     </div>
 
+    <h3 class="section-title" style="font-size:1.3rem;">Add New Tour (and set price)</h3>
+    <div class="panel" style="margin-bottom:1.5rem;">
+      <form method="post" action="/admin/tours/create">
+        <div class="row"><div><label>Title</label><input name="title" required></div><div><label>Destination</label><input name="destination" required></div></div>
+        <label>Description</label><textarea name="description" required></textarea>
+        <div class="row"><div><label>Duration (days)</label><input type="number" name="duration_days" min="1" required></div><div><label>Price (USD per person)</label><input type="number" step="0.01" name="price_usd" min="0" required></div></div>
+        <label>Image URL (or /static/media/...)</label><input name="image_url" placeholder="/static/media/example.jpg or https://...">
+        <label style="display:flex;align-items:center;gap:.4rem;margin-top:.5rem;"><input type="checkbox" name="featured" style="width:auto;"> Featured tour</label>
+        <button class="btn" type="submit" style="margin-top:.75rem;">Create Tour</button>
+      </form>
+    </div>
+
+    <h3 class="section-title" style="font-size:1.3rem;">Manage Tours & Prices</h3>
+    {% for t in tours %}
+    <div class="panel" style="margin-bottom:1rem;">
+      <form method="post" action="/admin/tours/{{ t.id }}/update">
+        <strong>Tour #{{ t.id }}</strong>
+        <div class="row"><div><label>Title</label><input name="title" value="{{ t.title }}" required></div><div><label>Destination</label><input name="destination" value="{{ t.destination }}" required></div></div>
+        <label>Description</label><textarea name="description" required>{{ t.description }}</textarea>
+        <div class="row"><div><label>Duration (days)</label><input type="number" name="duration_days" value="{{ t.duration_days }}" min="1" required></div><div><label>Price (USD)</label><input type="number" step="0.01" name="price_usd" value="{{ '%.2f'|format(t.price_usd) }}" min="0" required></div></div>
+        <label>Image URL</label><input name="image_url" value="{{ t.image_url or '' }}">
+        <label style="display:flex;align-items:center;gap:.4rem;margin-top:.5rem;"><input type="checkbox" name="featured" style="width:auto;" {% if t.featured %}checked{% endif %}> Featured</label>
+        <div style="display:flex;gap:.5rem;flex-wrap:wrap;margin-top:.75rem;">
+          <button class="btn" type="submit">Save Changes</button>
+        </div>
+      </form>
+      <form method="post" action="/admin/tours/{{ t.id }}/delete" onsubmit="return confirm('Delete this tour?');" style="margin-top:.5rem;">
+        <button class="btn" type="submit" style="background:#fee2e2;color:#991b1b;box-shadow:none;">Delete Tour</button>
+      </form>
+    </div>
+    {% else %}<div class="panel" style="margin-bottom:1rem;">No tours yet.</div>{% endfor %}
+
+    <h3 class="section-title" style="font-size:1.3rem;">Post to Dashboard (what to show)</h3>
+    <div class="panel" style="margin-bottom:1rem;">
+      <form method="post" action="/admin/posts/create">
+        <div class="row"><div><label>Title</label><input name="title" required></div><div><label>Sort order</label><input type="number" name="sort_order" value="0"></div></div>
+        <label>Body / caption</label><textarea name="body"></textarea>
+        <div class="row">
+          <div><label>Media URL</label><input name="media_url" list="media-list" placeholder="/static/media/... or https://..."></div>
+          <div><label>Media type</label><select name="media_type"><option value="image">image</option><option value="video">video</option><option value="none">none</option></select></div>
+        </div>
+        <datalist id="media-list">{% for m in media_files %}<option value="{{ m }}">{% endfor %}</datalist>
+        <label style="display:flex;align-items:center;gap:.4rem;margin-top:.5rem;"><input type="checkbox" name="is_published" style="width:auto;" checked> Publish on dashboard</label>
+        <button class="btn" type="submit" style="margin-top:.75rem;">Create Post</button>
+      </form>
+    </div>
+
+    {% for p in posts %}
+    <div class="panel" style="margin-bottom:1rem;">
+      <form method="post" action="/admin/posts/{{ p.id }}/update">
+        <strong>Post #{{ p.id }}</strong>
+        <div class="row"><div><label>Title</label><input name="title" value="{{ p.title }}" required></div><div><label>Sort order</label><input type="number" name="sort_order" value="{{ p.sort_order }}"></div></div>
+        <label>Body</label><textarea name="body">{{ p.body or '' }}</textarea>
+        <div class="row"><div><label>Media URL</label><input name="media_url" value="{{ p.media_url or '' }}" list="media-list"></div><div><label>Media type</label><select name="media_type"><option value="image" {% if p.media_type=='image' %}selected{% endif %}>image</option><option value="video" {% if p.media_type=='video' %}selected{% endif %}>video</option><option value="none" {% if p.media_type=='none' %}selected{% endif %}>none</option></select></div></div>
+        <label style="display:flex;align-items:center;gap:.4rem;margin-top:.5rem;"><input type="checkbox" name="is_published" style="width:auto;" {% if p.is_published %}checked{% endif %}> Published</label>
+        <div style="display:flex;gap:.5rem;flex-wrap:wrap;margin-top:.75rem;"><button class="btn" type="submit">Save Post</button></div>
+      </form>
+      <form method="post" action="/admin/posts/{{ p.id }}/delete" onsubmit="return confirm('Delete this post?');" style="margin-top:.5rem;"><button class="btn" type="submit" style="background:#fee2e2;color:#991b1b;box-shadow:none;">Delete Post</button></form>
+    </div>
+    {% else %}<div class="panel" style="margin-bottom:1rem;">No dashboard posts yet.</div>{% endfor %}
+
     <h3 class="section-title" style="font-size:1.3rem;">Recent Bookings</h3>
     <div class="panel" style="overflow:auto; margin-bottom:1.5rem;">
       <table style="width:100%; border-collapse:collapse;">
-        <tr><th align="left">Name</th><th align="left">Email</th><th align="left">Tour ID</th><th align="left">Travelers</th><th align="left">Start</th><th align="left">Status</th></tr>
+        <tr><th align="left">Name</th><th align="left">Email</th><th align="left">Phone</th><th align="left">Tour ID</th><th align="left">Travelers</th><th align="left">Start</th><th align="left">Status</th></tr>
         {% for b in bookings %}
-        <tr><td style="padding:.4rem;border-top:1px solid #eee;">{{ b.full_name }}</td><td style="padding:.4rem;border-top:1px solid #eee;">{{ b.email }}</td><td style="padding:.4rem;border-top:1px solid #eee;">{{ b.tour_id }}</td><td style="padding:.4rem;border-top:1px solid #eee;">{{ b.travelers }}</td><td style="padding:.4rem;border-top:1px solid #eee;">{{ b.start_date }}</td><td style="padding:.4rem;border-top:1px solid #eee;">{{ b.status }}</td></tr>
-        {% else %}
-        <tr><td colspan="6" style="padding:.5rem;">No bookings yet.</td></tr>
-        {% endfor %}
+        <tr><td style="padding:.4rem;border-top:1px solid #eee;">{{ b.full_name }}</td><td style="padding:.4rem;border-top:1px solid #eee;">{{ b.email }}</td><td style="padding:.4rem;border-top:1px solid #eee;">{{ b.phone }}</td><td style="padding:.4rem;border-top:1px solid #eee;">{{ b.tour_id }}</td><td style="padding:.4rem;border-top:1px solid #eee;">{{ b.travelers }}</td><td style="padding:.4rem;border-top:1px solid #eee;">{{ b.start_date }}</td><td style="padding:.4rem;border-top:1px solid #eee;">{{ b.status }}</td></tr>
+        {% else %}<tr><td colspan="7" style="padding:.5rem;">No bookings yet.</td></tr>{% endfor %}
       </table>
     </div>
 
@@ -35,9 +97,7 @@
         <tr><th align="left">Name</th><th align="left">Email</th><th align="left">Subject</th><th align="left">Message</th></tr>
         {% for i in inquiries %}
         <tr><td style="padding:.4rem;border-top:1px solid #eee;">{{ i.full_name }}</td><td style="padding:.4rem;border-top:1px solid #eee;">{{ i.email }}</td><td style="padding:.4rem;border-top:1px solid #eee;">{{ i.subject }}</td><td style="padding:.4rem;border-top:1px solid #eee;">{{ i.message[:120] }}{% if i.message|length > 120 %}...{% endif %}</td></tr>
-        {% else %}
-        <tr><td colspan="4" style="padding:.5rem;">No inquiries yet.</td></tr>
-        {% endfor %}
+        {% else %}<tr><td colspan="4" style="padding:.5rem;">No inquiries yet.</td></tr>{% endfor %}
       </table>
     </div>
   </div>
