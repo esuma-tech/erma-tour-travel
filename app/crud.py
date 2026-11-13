@@ -147,6 +147,56 @@ def delete_dashboard_post(db: Session, post_id: int):
     return True
 
 
+def list_users(db: Session):
+    return db.scalars(select(models.User).order_by(models.User.created_at.desc())).all()
+
+
+def delete_user(db: Session, user_id: int):
+    user = db.get(models.User, user_id)
+    if not user:
+        return False
+    db.delete(user)
+    db.commit()
+    return True
+
+
+def update_booking_status(db: Session, booking_id: int, status: str):
+    booking = db.get(models.Booking, booking_id)
+    if not booking:
+        return None
+    booking.status = status
+    db.commit()
+    db.refresh(booking)
+    return booking
+
+
+def delete_booking(db: Session, booking_id: int):
+    booking = db.get(models.Booking, booking_id)
+    if not booking:
+        return False
+    db.delete(booking)
+    db.commit()
+    return True
+
+
+def delete_inquiry(db: Session, inquiry_id: int):
+    inquiry = db.get(models.Inquiry, inquiry_id)
+    if not inquiry:
+        return False
+    db.delete(inquiry)
+    db.commit()
+    return True
+
+
+def update_admin_password(db: Session, username: str, password_hash: str):
+    admin = get_admin_by_username(db, username)
+    if not admin:
+        return None
+    admin.password_hash = password_hash
+    db.commit()
+    return admin
+
+
 def get_setting(db: Session, key: str, default: str = ""):
     row = db.get(models.SiteSetting, key)
     return row.value if row else default

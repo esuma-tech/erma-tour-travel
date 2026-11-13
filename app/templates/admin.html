@@ -6,160 +6,224 @@
     <div style="display:flex;justify-content:space-between;align-items:center;gap:1rem;flex-wrap:wrap;">
       <div>
         <h2 class="section-title">Admin Panel</h2>
-        <p class="section-sub">Signed in as <strong>{{ user }}</strong> — manage tours, prices, dashboard posts, bookings, and inquiries.</p>
+        <p class="section-sub">Signed in as <strong>{{ user }}</strong></p>
       </div>
       <a class="btn" href="/admin/logout">Logout</a>
     </div>
 
-    {% if notice %}<div class="alert alert-success">Action completed: {{ notice.replace('_',' ') }}.</div>{% endif %}
+    {% if notice %}<div class="alert alert-success">Action: {{ notice.replace('_',' ') }}.</div>{% endif %}
 
-    <div class="features" style="margin:1.2rem 0 2rem;">
-      <div class="feature"><h4>{{ tours|length }}</h4><p>Tours</p></div>
-      <div class="feature"><h4>{{ posts|length }}</h4><p>Dashboard posts</p></div>
-      <div class="feature"><h4>{{ bookings|length }}</h4><p>Booking requests</p></div>
-      <div class="feature"><h4>{{ inquiries|length }}</h4><p>Inquiries</p></div>
+    <div class="panel" style="margin:1rem 0 1.5rem;">
+      <div style="display:flex;flex-wrap:wrap;gap:.5rem;">
+        <a class="btn" href="/admin?section=overview">Overview</a>
+        <a class="btn" href="/admin?section=dashboard">Edit Dashboard</a>
+        <a class="btn" href="/admin?section=content">Posts & Packages</a>
+        <a class="btn" href="/admin?section=bookings">Bookings</a>
+        <a class="btn" href="/admin?section=inquiries">Inquiries</a>
+        <a class="btn" href="/admin?section=users">Users</a>
+        <a class="btn" href="/admin?section=password">Password Manager</a>
+        <a class="btn" href="/admin?section=settings">Settings & Tips</a>
+      </div>
     </div>
 
-    <h3 class="section-title" style="font-size:1.3rem;">Add New Tour (and set price)</h3>
-    <div class="panel" style="margin-bottom:1.5rem;">
+    <div class="features" style="margin:0 0 1.5rem;">
+      <div class="feature"><h4>{{ tours|length }}</h4><p>Tour packages</p></div>
+      <div class="feature"><h4>{{ posts|length }}</h4><p>Dashboard posts</p></div>
+      <div class="feature"><h4>{{ bookings|length }}</h4><p>Bookings</p></div>
+      <div class="feature"><h4>{{ users|length }}</h4><p>Registered users</p></div>
+      <div class="feature"><h4>{{ inquiries|length }}</h4><p>Inquiries</p></div>
+      <div class="feature"><h4>{{ images|length + videos|length }}</h4><p>Gallery media</p></div>
+    </div>
+
+    {% if section == 'overview' %}
+    <div class="panel">
+      <h3 class="section-title" style="font-size:1.3rem;">Admin Overview</h3>
+      <p>Use the buttons above to manage the website:</p>
+      <ul style="padding-left:1.2rem; margin-top:.5rem; line-height:1.9;">
+        <li><strong>Edit Dashboard:</strong> upload/delete gallery images and videos shown publicly.</li>
+        <li><strong>Posts & Packages:</strong> create/edit/delete tours (packages, prices, details) and dashboard posts.</li>
+        <li><strong>Bookings:</strong> review bookings, update status (pending/confirmed/cancelled/completed), or delete.</li>
+        <li><strong>Inquiries:</strong> read and remove contact inquiries.</li>
+        <li><strong>Users:</strong> view registered customers and remove accounts if needed.</li>
+        <li><strong>Password Manager:</strong> change the admin password.</li>
+        <li><strong>Recommended extras:</strong> export reports, manage availability/calendar, testimonials, promotions/coupons, and email notifications.</li>
+      </ul>
+    </div>
+
+    {% elif section == 'dashboard' %}
+    <h3 class="section-title" style="font-size:1.3rem;">Edit Dashboard (Gallery Media)</h3>
+    <div class="panel" style="margin-bottom:1rem;">
+      <form method="post" action="/admin/media/upload" enctype="multipart/form-data">
+        <input type="hidden" name="section" value="dashboard">
+        <label>Upload images/videos (jpg, png, webp, gif, mp4, webm, mov)</label>
+        <input type="file" name="files" multiple accept=".jpg,.jpeg,.png,.webp,.gif,.mp4,.webm,.mov" required>
+        <button class="btn" type="submit" style="margin-top:.75rem;">Upload Media</button>
+      </form>
+      <p style="margin-top:.5rem; color:#5b6472;">Note: on Render, runtime uploads may not persist across redeploys; commit important media to the repo for permanence.</p>
+    </div>
+    <div class="grid">
+      {% for img in images %}
+      <div class="card"><img src="/static/media/{{ img | urlencode }}" alt="{{ img }}" style="height:160px;"><div class="card-body"><div class="meta" style="word-break:break-all;">{{ img }}</div><form method="post" action="/admin/media/delete" onsubmit="return confirm('Delete this image?');"><input type="hidden" name="section" value="dashboard"><input type="hidden" name="filename" value="{{ img }}"><button class="btn" type="submit" style="background:#fee2e2;color:#991b1b;box-shadow:none;">Delete</button></form></div></div>
+      {% endfor %}
+      {% for v in videos %}
+      <div class="card"><video controls preload="metadata" style="width:100%;height:160px;background:#000;" src="/static/media/{{ v | urlencode }}"></video><div class="card-body"><div class="meta" style="word-break:break-all;">{{ v }}</div><form method="post" action="/admin/media/delete" onsubmit="return confirm('Delete this video?');"><input type="hidden" name="section" value="dashboard"><input type="hidden" name="filename" value="{{ v }}"><button class="btn" type="submit" style="background:#fee2e2;color:#991b1b;box-shadow:none;">Delete</button></form></div></div>
+      {% endfor %}
+      {% if not images and not videos %}<div class="panel">No media files.</div>{% endif %}
+    </div>
+
+    {% elif section == 'content' %}
+    <h3 class="section-title" style="font-size:1.3rem;">Tour Packages (Add / Edit / Delete)</h3>
+    <div class="panel" style="margin-bottom:1rem;">
+      <h4 style="color:#134e4a; margin-bottom:.4rem;">Add New Package</h4>
       <form method="post" action="/admin/tours/create">
         <div class="row"><div><label>Title</label><input name="title" required></div><div><label>Destination</label><input name="destination" required></div></div>
         <label>Description</label><textarea name="description" required></textarea>
-        <div class="row"><div><label>Duration (days)</label><input type="number" name="duration_days" min="1" required></div><div><label>Price (USD per person)</label><input type="number" step="0.01" name="price_usd" min="0" required></div></div>
-        <label>Image URL (or /static/media/...)</label><input name="image_url" placeholder="/static/media/example.jpg or https://...">
-        <label style="display:flex;align-items:center;gap:.4rem;margin-top:.5rem;"><input type="checkbox" name="featured" style="width:auto;"> Featured tour</label>
-        <button class="btn" type="submit" style="margin-top:.75rem;">Create Tour</button>
+        <div class="row"><div><label>Duration (days)</label><input type="number" name="duration_days" min="1" required></div><div><label>Price (USD)</label><input type="number" step="0.01" name="price_usd" min="0" required></div></div>
+        <label>Image URL</label><input name="image_url" placeholder="/static/media/... or https://...">
+        <label style="display:flex;align-items:center;gap:.4rem;margin-top:.5rem;"><input type="checkbox" name="featured" style="width:auto;"> Featured</label>
+        <button class="btn" type="submit" style="margin-top:.75rem;">Create Package</button>
       </form>
     </div>
-
-    <h3 class="section-title" style="font-size:1.3rem;">Manage Tours & Prices</h3>
     <div class="panel" style="margin-bottom:1rem;">
       <form method="get" action="/admin">
-        <label>Select a tour to edit</label>
-        <div class="row" style="align-items:end;">
-          <div>
-            <select name="edit_tour" required>
-              <option value="">-- Choose a tour --</option>
-              {% for t in tours %}
-              <option value="{{ t.id }}" {% if edit_tour_id == t.id %}selected{% endif %}>#{{ t.id }} — {{ t.title }} ({{ t.destination }}, ${{ '%.0f'|format(t.price_usd) }})</option>
-              {% endfor %}
-            </select>
-          </div>
-          <div><button class="btn" type="submit">Load Tour</button></div>
-        </div>
+        <input type="hidden" name="section" value="content">
+        <label>Select a package to edit</label>
+        <div class="row" style="align-items:end;"><div><select name="edit_tour" required><option value="">-- Choose a package --</option>{% for t in tours %}<option value="{{ t.id }}" {% if edit_tour_id == t.id %}selected{% endif %}>#{{ t.id }} — {{ t.title }} (${{ '%.0f'|format(t.price_usd) }})</option>{% endfor %}</select></div><div><button class="btn" type="submit">Load Package</button></div></div>
       </form>
     </div>
     {% if edit_tour %}
     <div class="panel" style="margin-bottom:1.5rem;">
       <form method="post" action="/admin/tours/{{ edit_tour.id }}/update">
-        <strong>Editing Tour #{{ edit_tour.id }}</strong>
+        <strong>Editing Package #{{ edit_tour.id }}</strong>
         <div class="row"><div><label>Title</label><input name="title" value="{{ edit_tour.title }}" required></div><div><label>Destination</label><input name="destination" value="{{ edit_tour.destination }}" required></div></div>
         <label>Description</label><textarea name="description" required>{{ edit_tour.description }}</textarea>
         <div class="row"><div><label>Duration (days)</label><input type="number" name="duration_days" value="{{ edit_tour.duration_days }}" min="1" required></div><div><label>Price (USD)</label><input type="number" step="0.01" name="price_usd" value="{{ '%.2f'|format(edit_tour.price_usd) }}" min="0" required></div></div>
         <label>Image URL</label><input name="image_url" value="{{ edit_tour.image_url or '' }}">
         <label style="display:flex;align-items:center;gap:.4rem;margin-top:.5rem;"><input type="checkbox" name="featured" style="width:auto;" {% if edit_tour.featured %}checked{% endif %}> Featured</label>
-        <div style="display:flex;gap:.5rem;flex-wrap:wrap;margin-top:.75rem;">
-          <button class="btn" type="submit">Save Changes</button>
-        </div>
+        <button class="btn" type="submit" style="margin-top:.75rem;">Save Package</button>
       </form>
-      <form method="post" action="/admin/tours/{{ edit_tour.id }}/delete" onsubmit="return confirm('Delete this tour?');" style="margin-top:.5rem;">
-        <button class="btn" type="submit" style="background:#fee2e2;color:#991b1b;box-shadow:none;">Delete Tour</button>
-      </form>
+      <form method="post" action="/admin/tours/{{ edit_tour.id }}/delete" onsubmit="return confirm('Delete this package?');" style="margin-top:.5rem;"><button class="btn" type="submit" style="background:#fee2e2;color:#991b1b;box-shadow:none;">Delete Package</button></form>
     </div>
-    {% elif tours %}
-    <div class="panel" style="margin-bottom:1.5rem;">Select a tour from the dropdown above to edit its details or price.</div>
-    {% else %}
-    <div class="panel" style="margin-bottom:1.5rem;">No tours yet. Create one above.</div>
     {% endif %}
 
-    <h3 class="section-title" style="font-size:1.3rem;">Post to Dashboard (what to show)</h3>
+    <h3 class="section-title" style="font-size:1.3rem;">Dashboard Posts</h3>
     <div class="panel" style="margin-bottom:1rem;">
+      <h4 style="color:#134e4a; margin-bottom:.4rem;">Create Post</h4>
       <form method="post" action="/admin/posts/create">
         <div class="row"><div><label>Title</label><input name="title" required></div><div><label>Sort order</label><input type="number" name="sort_order" value="0"></div></div>
-        <label>Body / caption</label><textarea name="body"></textarea>
-        <div class="row">
-          <div><label>Media URL</label><input name="media_url" list="media-list" placeholder="/static/media/... or https://..."></div>
-          <div><label>Media type</label><select name="media_type"><option value="image">image</option><option value="video">video</option><option value="none">none</option></select></div>
-        </div>
+        <label>Body</label><textarea name="body"></textarea>
+        <div class="row"><div><label>Media URL</label><input name="media_url" list="media-list" placeholder="/static/media/..."></div><div><label>Media type</label><select name="media_type"><option value="image">image</option><option value="video">video</option><option value="none">none</option></select></div></div>
         <datalist id="media-list">{% for m in media_files %}<option value="{{ m }}">{% endfor %}</datalist>
-        <label style="display:flex;align-items:center;gap:.4rem;margin-top:.5rem;"><input type="checkbox" name="is_published" style="width:auto;" checked> Publish on dashboard</label>
+        <label style="display:flex;align-items:center;gap:.4rem;margin-top:.5rem;"><input type="checkbox" name="is_published" style="width:auto;" checked> Publish</label>
         <button class="btn" type="submit" style="margin-top:.75rem;">Create Post</button>
       </form>
     </div>
-
-    {% for p in posts %}
     <div class="panel" style="margin-bottom:1rem;">
-      <form method="post" action="/admin/posts/{{ p.id }}/update">
-        <strong>Post #{{ p.id }}</strong>
-        <div class="row"><div><label>Title</label><input name="title" value="{{ p.title }}" required></div><div><label>Sort order</label><input type="number" name="sort_order" value="{{ p.sort_order }}"></div></div>
-        <label>Body</label><textarea name="body">{{ p.body or '' }}</textarea>
-        <div class="row"><div><label>Media URL</label><input name="media_url" value="{{ p.media_url or '' }}" list="media-list"></div><div><label>Media type</label><select name="media_type"><option value="image" {% if p.media_type=='image' %}selected{% endif %}>image</option><option value="video" {% if p.media_type=='video' %}selected{% endif %}>video</option><option value="none" {% if p.media_type=='none' %}selected{% endif %}>none</option></select></div></div>
-        <label style="display:flex;align-items:center;gap:.4rem;margin-top:.5rem;"><input type="checkbox" name="is_published" style="width:auto;" {% if p.is_published %}checked{% endif %}> Published</label>
-        <div style="display:flex;gap:.5rem;flex-wrap:wrap;margin-top:.75rem;"><button class="btn" type="submit">Save Post</button></div>
+      <form method="get" action="/admin"><input type="hidden" name="section" value="content"><label>Select a post to edit</label><div class="row" style="align-items:end;"><div><select name="edit_post"><option value="">-- Choose a post --</option>{% for p in posts %}<option value="{{ p.id }}" {% if edit_post_id == p.id %}selected{% endif %}>#{{ p.id }} — {{ p.title }}</option>{% endfor %}</select></div><div><button class="btn" type="submit">Load Post</button></div></div></form>
+    </div>
+    {% if edit_post %}
+    <div class="panel">
+      <form method="post" action="/admin/posts/{{ edit_post.id }}/update">
+        <strong>Editing Post #{{ edit_post.id }}</strong>
+        <div class="row"><div><label>Title</label><input name="title" value="{{ edit_post.title }}" required></div><div><label>Sort order</label><input type="number" name="sort_order" value="{{ edit_post.sort_order }}"></div></div>
+        <label>Body</label><textarea name="body">{{ edit_post.body or '' }}</textarea>
+        <div class="row"><div><label>Media URL</label><input name="media_url" value="{{ edit_post.media_url or '' }}" list="media-list"></div><div><label>Media type</label><select name="media_type"><option value="image" {% if edit_post.media_type=='image' %}selected{% endif %}>image</option><option value="video" {% if edit_post.media_type=='video' %}selected{% endif %}>video</option><option value="none" {% if edit_post.media_type=='none' %}selected{% endif %}>none</option></select></div></div>
+        <label style="display:flex;align-items:center;gap:.4rem;margin-top:.5rem;"><input type="checkbox" name="is_published" style="width:auto;" {% if edit_post.is_published %}checked{% endif %}> Published</label>
+        <button class="btn" type="submit" style="margin-top:.75rem;">Save Post</button>
       </form>
-      <form method="post" action="/admin/posts/{{ p.id }}/delete" onsubmit="return confirm('Delete this post?');" style="margin-top:.5rem;"><button class="btn" type="submit" style="background:#fee2e2;color:#991b1b;box-shadow:none;">Delete Post</button></form>
+      <form method="post" action="/admin/posts/{{ edit_post.id }}/delete" onsubmit="return confirm('Delete this post?');" style="margin-top:.5rem;"><button class="btn" type="submit" style="background:#fee2e2;color:#991b1b;box-shadow:none;">Delete Post</button></form>
     </div>
-    {% else %}<div class="panel" style="margin-bottom:1rem;">No dashboard posts yet.</div>{% endfor %}
+    {% endif %}
 
-    <h3 class="section-title" style="font-size:1.3rem;">Manage Dashboard Images & Videos</h3>
-    <div class="panel" style="margin-bottom:1rem;">
-      <p class="section-sub" style="margin-bottom:.75rem;">Add or delete media files shown in the public dashboard gallery.</p>
-      <form method="post" action="/admin/media/upload" enctype="multipart/form-data">
-        <label>Upload images/videos (jpg, png, webp, gif, mp4, webm, mov)</label>
-        <input type="file" name="files" multiple accept=".jpg,.jpeg,.png,.webp,.gif,.mp4,.webm,.mov" required>
-        <button class="btn" type="submit" style="margin-top:.75rem;">Upload Media</button>
-      </form>
-    </div>
-
-    <div class="grid" style="margin-bottom:1.5rem;">
-      {% for img in images %}
-      <div class="card">
-        <img src="/static/media/{{ img | urlencode }}" alt="{{ img }}" style="height:160px;">
-        <div class="card-body">
-          <div class="meta" style="word-break:break-all;">{{ img }}</div>
-          <form method="post" action="/admin/media/delete" onsubmit="return confirm('Delete this image?');" style="margin-top:.5rem;">
-            <input type="hidden" name="filename" value="{{ img }}">
-            <button class="btn" type="submit" style="background:#fee2e2;color:#991b1b;box-shadow:none;">Delete Image</button>
-          </form>
-        </div>
-      </div>
-      {% endfor %}
-      {% for v in videos %}
-      <div class="card">
-        <video controls preload="metadata" style="width:100%;height:160px;background:#000;" src="/static/media/{{ v | urlencode }}"></video>
-        <div class="card-body">
-          <div class="meta" style="word-break:break-all;">{{ v }}</div>
-          <form method="post" action="/admin/media/delete" onsubmit="return confirm('Delete this video?');" style="margin-top:.5rem;">
-            <input type="hidden" name="filename" value="{{ v }}">
-            <button class="btn" type="submit" style="background:#fee2e2;color:#991b1b;box-shadow:none;">Delete Video</button>
-          </form>
-        </div>
-      </div>
-      {% endfor %}
-      {% if not images and not videos %}
-      <div class="panel">No media files in gallery.</div>
-      {% endif %}
-    </div>
-
-    <h3 class="section-title" style="font-size:1.3rem;">Recent Bookings</h3>
-    <div class="panel" style="overflow:auto; margin-bottom:1.5rem;">
+    {% elif section == 'bookings' %}
+    <h3 class="section-title" style="font-size:1.3rem;">Bookings</h3>
+    <div class="panel" style="overflow:auto;">
       <table style="width:100%; border-collapse:collapse;">
-        <tr><th align="left">Name</th><th align="left">Email</th><th align="left">Phone</th><th align="left">Tour ID</th><th align="left">Travelers</th><th align="left">Start</th><th align="left">Status</th></tr>
+        <tr><th align="left">ID</th><th align="left">Customer</th><th align="left">Tour</th><th align="left">Travelers</th><th align="left">Start</th><th align="left">Status</th><th align="left">Actions</th></tr>
         {% for b in bookings %}
-        <tr><td style="padding:.4rem;border-top:1px solid #eee;">{{ b.full_name }}</td><td style="padding:.4rem;border-top:1px solid #eee;">{{ b.email }}</td><td style="padding:.4rem;border-top:1px solid #eee;">{{ b.phone }}</td><td style="padding:.4rem;border-top:1px solid #eee;">{{ b.tour_id }}</td><td style="padding:.4rem;border-top:1px solid #eee;">{{ b.travelers }}</td><td style="padding:.4rem;border-top:1px solid #eee;">{{ b.start_date }}</td><td style="padding:.4rem;border-top:1px solid #eee;">{{ b.status }}</td></tr>
+        <tr>
+          <td style="padding:.4rem;border-top:1px solid #eee;">{{ b.id }}</td>
+          <td style="padding:.4rem;border-top:1px solid #eee;">{{ b.full_name }}<br><span class="meta">{{ b.email }}<br>{{ b.phone }}</span></td>
+          <td style="padding:.4rem;border-top:1px solid #eee;">#{{ b.tour_id }}</td>
+          <td style="padding:.4rem;border-top:1px solid #eee;">{{ b.travelers }}</td>
+          <td style="padding:.4rem;border-top:1px solid #eee;">{{ b.start_date }}</td>
+          <td style="padding:.4rem;border-top:1px solid #eee;">
+            <form method="post" action="/admin/bookings/{{ b.id }}/status" style="display:flex;gap:.3rem;align-items:center;">
+              <input type="hidden" name="section" value="bookings">
+              <select name="status" style="padding:.2rem;"><option value="pending" {% if b.status=='pending' %}selected{% endif %}>pending</option><option value="confirmed" {% if b.status=='confirmed' %}selected{% endif %}>confirmed</option><option value="cancelled" {% if b.status=='cancelled' %}selected{% endif %}>cancelled</option><option value="completed" {% if b.status=='completed' %}selected{% endif %}>completed</option></select>
+              <button class="btn" type="submit" style="padding:.25rem .6rem;">Update</button>
+            </form>
+          </td>
+          <td style="padding:.4rem;border-top:1px solid #eee;"><form method="post" action="/admin/bookings/{{ b.id }}/delete" onsubmit="return confirm('Delete booking?');"><input type="hidden" name="section" value="bookings"><button class="btn" type="submit" style="background:#fee2e2;color:#991b1b;box-shadow:none;padding:.25rem .6rem;">Delete</button></form></td>
+        </tr>
         {% else %}<tr><td colspan="7" style="padding:.5rem;">No bookings yet.</td></tr>{% endfor %}
       </table>
     </div>
 
-    <h3 class="section-title" style="font-size:1.3rem;">Recent Inquiries</h3>
+    {% elif section == 'inquiries' %}
+    <h3 class="section-title" style="font-size:1.3rem;">Inquiries</h3>
     <div class="panel" style="overflow:auto;">
       <table style="width:100%; border-collapse:collapse;">
-        <tr><th align="left">Name</th><th align="left">Email</th><th align="left">Subject</th><th align="left">Message</th></tr>
+        <tr><th align="left">From</th><th align="left">Subject</th><th align="left">Message</th><th align="left">Date</th><th></th></tr>
         {% for i in inquiries %}
-        <tr><td style="padding:.4rem;border-top:1px solid #eee;">{{ i.full_name }}</td><td style="padding:.4rem;border-top:1px solid #eee;">{{ i.email }}</td><td style="padding:.4rem;border-top:1px solid #eee;">{{ i.subject }}</td><td style="padding:.4rem;border-top:1px solid #eee;">{{ i.message[:120] }}{% if i.message|length > 120 %}...{% endif %}</td></tr>
-        {% else %}<tr><td colspan="4" style="padding:.5rem;">No inquiries yet.</td></tr>{% endfor %}
+        <tr>
+          <td style="padding:.4rem;border-top:1px solid #eee;">{{ i.full_name }}<br><span class="meta">{{ i.email }}{% if i.phone %}<br>{{ i.phone }}{% endif %}</span></td>
+          <td style="padding:.4rem;border-top:1px solid #eee;">{{ i.subject }}</td>
+          <td style="padding:.4rem;border-top:1px solid #eee;">{{ i.message }}</td>
+          <td style="padding:.4rem;border-top:1px solid #eee;">{{ i.created_at.strftime('%Y-%m-%d') if i.created_at else '' }}</td>
+          <td style="padding:.4rem;border-top:1px solid #eee;"><form method="post" action="/admin/inquiries/{{ i.id }}/delete" onsubmit="return confirm('Delete inquiry?');"><input type="hidden" name="section" value="inquiries"><button class="btn" type="submit" style="background:#fee2e2;color:#991b1b;box-shadow:none;padding:.25rem .6rem;">Delete</button></form></td>
+        </tr>
+        {% else %}<tr><td colspan="5" style="padding:.5rem;">No inquiries.</td></tr>{% endfor %}
       </table>
     </div>
+
+    {% elif section == 'users' %}
+    <h3 class="section-title" style="font-size:1.3rem;">Registered Users</h3>
+    <div class="panel" style="overflow:auto;">
+      <table style="width:100%; border-collapse:collapse;">
+        <tr><th align="left">ID</th><th align="left">Name</th><th align="left">Email</th><th align="left">Phone</th><th align="left">Joined</th><th></th></tr>
+        {% for u in users %}
+        <tr>
+          <td style="padding:.4rem;border-top:1px solid #eee;">{{ u.id }}</td>
+          <td style="padding:.4rem;border-top:1px solid #eee;">{{ u.full_name }}</td>
+          <td style="padding:.4rem;border-top:1px solid #eee;">{{ u.email }}</td>
+          <td style="padding:.4rem;border-top:1px solid #eee;">{{ u.phone or '' }}</td>
+          <td style="padding:.4rem;border-top:1px solid #eee;">{{ u.created_at.strftime('%Y-%m-%d') if u.created_at else '' }}</td>
+          <td style="padding:.4rem;border-top:1px solid #eee;"><form method="post" action="/admin/users/{{ u.id }}/delete" onsubmit="return confirm('Delete this user?');"><input type="hidden" name="section" value="users"><button class="btn" type="submit" style="background:#fee2e2;color:#991b1b;box-shadow:none;padding:.25rem .6rem;">Delete</button></form></td>
+        </tr>
+        {% else %}<tr><td colspan="6" style="padding:.5rem;">No users yet.</td></tr>{% endfor %}
+      </table>
+    </div>
+
+    {% elif section == 'password' %}
+    <h3 class="section-title" style="font-size:1.3rem;">Password Manager</h3>
+    <div class="panel" style="max-width:520px;">
+      <form method="post" action="/admin/password">
+        <input type="hidden" name="section" value="password">
+        <label>Current password</label><input type="password" name="current_password" required>
+        <label>New password</label><input type="password" name="new_password" minlength="6" required>
+        <label>Confirm new password</label><input type="password" name="confirm_password" minlength="6" required>
+        <button class="btn" type="submit" style="margin-top:.75rem;">Change Password</button>
+      </form>
+    </div>
+
+    {% elif section == 'settings' %}
+    <h3 class="section-title" style="font-size:1.3rem;">Settings & Recommendations</h3>
+    <div class="panel">
+      <p><strong>Useful admin features to consider next:</strong></p>
+      <ul style="padding-left:1.2rem; margin-top:.5rem; line-height:1.9;">
+        <li>Booking calendar/availability and capacity limits per tour date</li>
+        <li>Export bookings/inquiries to CSV/Excel</li>
+        <li>Email/SMS notifications on new bookings or status changes</li>
+        <li>Customer testimonials/reviews moderation</li>
+        <li>Promotions, discounts, and seasonal pricing</li>
+        <li>Multi-admin roles and activity logs</li>
+        <li>SEO/content editing for pages and blog posts</li>
+        <li>Persistent cloud media storage (S3/Cloudinary) for uploads</li>
+      </ul>
+      <p style="margin-top:.75rem;">Quick links: <a href="/dashboard" target="_blank">View public dashboard</a> · <a href="/book" target="_blank">View booking page</a> · <a href="/tours" target="_blank">View tours</a></p>
+    </div>
+    {% endif %}
   </div>
 </section>
 {% endblock %}

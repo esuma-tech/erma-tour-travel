@@ -181,26 +181,32 @@ def require_admin(request: Request):
 
 
 @router.get("/admin", response_class=HTMLResponse)
-def admin_panel(request: Request, edit_tour: int | None = None, db: Session = Depends(get_db)):
+def admin_panel(request: Request, section: str = "overview", edit_tour: int | None = None, edit_post: int | None = None, db: Session = Depends(get_db)):
     user = require_admin(request)
     if not user:
         return RedirectResponse("/admin/login", status_code=303)
     images, videos = list_media()
     media_files = ["/static/media/" + f for f in images + videos]
     tours = crud.list_tours(db)
+    posts = crud.list_dashboard_posts(db)
     selected_tour = crud.get_tour(db, edit_tour) if edit_tour else None
+    selected_post = crud.get_dashboard_post(db, edit_post) if edit_post else None
     return templates.TemplateResponse(request, "admin.html", {
         "user": user,
+        "section": section,
         "tours": tours,
         "bookings": crud.list_bookings(db),
         "inquiries": crud.list_inquiries(db),
-        "posts": crud.list_dashboard_posts(db),
+        "users": crud.list_users(db),
+        "posts": posts,
         "media_files": media_files,
         "images": images,
         "videos": videos,
         "notice": request.query_params.get("notice"),
         "edit_tour": selected_tour,
         "edit_tour_id": edit_tour,
+        "edit_post": selected_post,
+        "edit_post_id": edit_post,
     })
 
 
@@ -209,7 +215,7 @@ def admin_create_tour(request: Request, title: str = Form(...), destination: str
     if not require_admin(request):
         return RedirectResponse("/admin/login", status_code=303)
     crud.create_tour(db, {"title": title, "destination": destination, "description": description, "duration_days": duration_days, "price_usd": price_usd, "image_url": image_url or None, "featured": featured == "on"})
-    return RedirectResponse("/admin?notice=tour_created", status_code=303)
+    return RedirectResponse("/admin?section=content&notice=tour_created", status_code=303)
 
 
 @router.post("/admin/tours/{tour_id}/update")
@@ -217,7 +223,7 @@ def admin_update_tour(request: Request, tour_id: int, title: str = Form(...), de
     if not require_admin(request):
         return RedirectResponse("/admin/login", status_code=303)
     crud.update_tour(db, tour_id, {"title": title, "destination": destination, "description": description, "duration_days": duration_days, "price_usd": price_usd, "image_url": image_url or None, "featured": featured == "on"})
-    return RedirectResponse("/admin?notice=tour_updated", status_code=303)
+    return RedirectResponse(f"/admin?section=content&edit_tour={tour_id}&notice=tour_updated", status_code=303)
 
 
 @router.post("/admin/tours/{tour_id}/delete")
@@ -225,7 +231,7 @@ def admin_delete_tour(request: Request, tour_id: int, db: Session = Depends(get_
     if not require_admin(request):
         return RedirectResponse("/admin/login", status_code=303)
     crud.delete_tour(db, tour_id)
-    return RedirectResponse("/admin?notice=tour_deleted", status_code=303)
+    return RedirectResponse("/admin?section=content&notice=tour_deleted", status_code=303)
 
 
 @router.post("/admin/posts/create")
@@ -233,7 +239,7 @@ def admin_create_post(request: Request, title: str = Form(...), body: str = Form
     if not require_admin(request):
         return RedirectResponse("/admin/login", status_code=303)
     crud.create_dashboard_post(db, {"title": title, "body": body or None, "media_url": media_url or None, "media_type": media_type, "sort_order": sort_order, "is_published": is_published == "on"})
-    return RedirectResponse("/admin?notice=post_created", status_code=303)
+    return RedirectResponse("/admin?section=content&notice=post_created", status_code=303)
 
 
 @router.post("/admin/posts/{post_id}/update")
@@ -241,7 +247,7 @@ def admin_update_post(request: Request, post_id: int, title: str = Form(...), bo
     if not require_admin(request):
         return RedirectResponse("/admin/login", status_code=303)
     crud.update_dashboard_post(db, post_id, {"title": title, "body": body or None, "media_url": media_url or None, "media_type": media_type, "sort_order": sort_order, "is_published": is_published == "on"})
-    return RedirectResponse("/admin?notice=post_updated", status_code=303)
+    return RedirectResponse(f"/admin?section=content&edit_post={post_id}&notice=post_updated", status_code=303)
 
 
 @router.post("/admin/posts/{post_id}/delete")
@@ -249,11 +255,11 @@ def admin_delete_post(request: Request, post_id: int, db: Session = Depends(get_
     if not require_admin(request):
         return RedirectResponse("/admin/login", status_code=303)
     crud.delete_dashboard_post(db, post_id)
-    return RedirectResponse("/admin?notice=post_deleted", status_code=303)
+    return RedirectResponse("/admin?section=content&notice=post_deleted", status_code=303)
 
 
 @router.post("/admin/media/upload")
-async def admin_upload_media(request: Request, files: list[UploadFile] = File(...)):
+async def admin_upload_media(request: Request, files: list[UploadFile] = File(...), section: str = Form("dashboard")):
     if not require_admin(request):
         return RedirectResponse("/admin/login", status_code=303)
     MEDIA_DIR.mkdir(parents=True, exist_ok=True)
@@ -276,11 +282,11 @@ async def admin_upload_media(request: Request, files: list[UploadFile] = File(..
         with dest.open("wb") as out:
             shutil.copyfileobj(f.file, out)
         saved += 1
-    return RedirectResponse(f"/admin?notice=uploaded_{saved}", status_code=303)
+    return RedirectResponse(f"/admin?section={section}&notice=uploaded_{saved}", status_code=303)
 
 
 @router.post("/admin/media/delete")
-def admin_delete_media(request: Request, filename: str = Form(...)):
+def admin_delete_media(request: Request, filename: str = Form(...), section: str = Form("dashboard")):
     if not require_admin(request):
         return RedirectResponse("/admin/login", status_code=303)
     name = Path(filename).name
@@ -288,4 +294,50 @@ def admin_delete_media(request: Request, filename: str = Form(...)):
     if MEDIA_DIR.resolve() in target.parents or target.parent == MEDIA_DIR.resolve():
         if target.exists() and target.is_file():
             target.unlink()
-    return RedirectResponse("/admin?notice=media_deleted", status_code=303)
+    return RedirectResponse(f"/admin?section={section}&notice=media_deleted", status_code=303)
+
+
+@router.post("/admin/bookings/{booking_id}/status")
+def admin_update_booking_status(request: Request, booking_id: int, status: str = Form(...), db: Session = Depends(get_db)):
+    if not require_admin(request):
+        return RedirectResponse("/admin/login", status_code=303)
+    crud.update_booking_status(db, booking_id, status)
+    return RedirectResponse("/admin?section=bookings&notice=booking_updated", status_code=303)
+
+
+@router.post("/admin/bookings/{booking_id}/delete")
+def admin_delete_booking(request: Request, booking_id: int, db: Session = Depends(get_db)):
+    if not require_admin(request):
+        return RedirectResponse("/admin/login", status_code=303)
+    crud.delete_booking(db, booking_id)
+    return RedirectResponse("/admin?section=bookings&notice=booking_deleted", status_code=303)
+
+
+@router.post("/admin/inquiries/{inquiry_id}/delete")
+def admin_delete_inquiry(request: Request, inquiry_id: int, db: Session = Depends(get_db)):
+    if not require_admin(request):
+        return RedirectResponse("/admin/login", status_code=303)
+    crud.delete_inquiry(db, inquiry_id)
+    return RedirectResponse("/admin?section=inquiries&notice=inquiry_deleted", status_code=303)
+
+
+@router.post("/admin/users/{user_id}/delete")
+def admin_delete_user(request: Request, user_id: int, db: Session = Depends(get_db)):
+    if not require_admin(request):
+        return RedirectResponse("/admin/login", status_code=303)
+    crud.delete_user(db, user_id)
+    return RedirectResponse("/admin?section=users&notice=user_deleted", status_code=303)
+
+
+@router.post("/admin/password")
+def admin_change_password(request: Request, current_password: str = Form(...), new_password: str = Form(...), confirm_password: str = Form(...), db: Session = Depends(get_db)):
+    username = require_admin(request)
+    if not username:
+        return RedirectResponse("/admin/login", status_code=303)
+    if new_password != confirm_password or len(new_password) < 6:
+        return RedirectResponse("/admin?section=password&notice=password_mismatch", status_code=303)
+    admin = crud.get_admin_by_username(db, username)
+    if not admin or not verify_password(current_password, admin.password_hash):
+        return RedirectResponse("/admin?section=password&notice=wrong_password", status_code=303)
+    crud.update_admin_password(db, username, hash_password(new_password))
+    return RedirectResponse("/admin?section=password&notice=password_changed", status_code=303)
