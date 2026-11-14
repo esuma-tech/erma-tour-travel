@@ -1,0 +1,15 @@
+name: Keep Render Awake
+
+on:
+  schedule:
+    - cron: "*/14 * * * *"
+  workflow_dispatch:
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping app
+        run: |
+          curl -fsS --max-time 30 https://erma-tour-travel.onrender.com/api/health || true
+          curl -fsS --max-time 30 https://erma-tour-travel.onrender.com/ >/dev/null || true
